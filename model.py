@@ -117,6 +117,62 @@ def write_bigram_2_file(bigram_model, file_path):
 
 
 
+def pred_by_unigram(en_unigram_model, fr_unigram_model, span_unigram_model, sentence):
+	en_unigram_possib = 0
+	fr_unigram_possib = 0
+	span_unigram_possib = 0
+	tokens = process_text(sentence)
+
+	for t in tokens:
+		t = t.strip()
+		for i in range(0, len(t)):
+			alpha = t[i]
+			alpha_index = alphabet.index(alpha)
+			
+			fr_unigram_possib += math.log10(fr_unigram_model[alpha_index])
+			en_unigram_possib += math.log10(en_unigram_model[alpha_index])
+			span_unigram_possib += math.log10(span_unigram_model[alpha_index])
+
+	# get max
+	if en_unigram_possib >= fr_unigram_possib and en_unigram_possib >= span_unigram_possib:
+		return 'en'
+	elif fr_unigram_possib >= en_unigram_possib and fr_unigram_possib >= span_unigram_possib:
+		return 'fr'
+	elif span_unigram_possib >= fr_unigram_possib and span_unigram_possib >= en_unigram_possib:
+		return'span'
+
+
+
+def pred_by_bigram(en_bigram_model, fr_bigram_model, span_bigram_model, sentence):
+	en_bigram_possib = 0
+	fr_bigram_possib = 0
+	span_bigram_possib = 0
+	tokens = process_text(sentence)
+
+	for t in tokens:
+		t = t.strip()
+
+		for i in range(0, len(t) - 1):
+			pre_char = t[i]
+			after_char = t[i + 1]
+			pre_index = alphabet.index(pre_char)
+			after_index = alphabet.index(after_char)
+							
+			fr_bigram_possib += math.log10(fr_bigram_model[pre_index][after_index])
+			en_bigram_possib += math.log10(en_bigram_model[pre_index][after_index])
+			span_bigram_possib += math.log10(span_bigram_model[pre_index][after_index])
+		
+
+	# get max
+	if en_bigram_possib >= fr_bigram_possib and en_bigram_possib >= span_bigram_possib:
+		return 'en'
+	elif fr_bigram_possib >= en_bigram_possib and fr_bigram_possib >= span_bigram_possib:
+		return 'fr'
+	elif span_bigram_possib >= fr_bigram_possib and span_bigram_possib >= en_bigram_possib:
+		return 'span'
+
+
+
 
 if __name__ == '__main__':
 	# train english model
@@ -155,72 +211,124 @@ if __name__ == '__main__':
 	write_bigram_2_file(span_bigram_model, 'bigramOT.txt')
 
 
+	IF_PREDICT = True
+	IF_EXPERIMENT = False
 
 	# ------------------ predict ------------------
-
-	pred_content = read_content('input.txt')
-	sentences = pred_content.split('\n')
-	for s in sentences:
-		en_unigram_possib = 0
-		fr_unigram_possib = 0
-		span_unigram_possib = 0
-		
-		log = s + '\r\n'
-		log += 'UNIGRAM MODEL:\r\n'
-		
-		for i in range(0, len(s)):
-			alpha = s[i]
-			alpha_index = alphabet.index(alpha)
+	if IF_PREDICT:
+		pred_content = read_content('input.txt')
+		sentences = pred_content.split('\n')
+		sentence_index = 1
+		 
+		for s in sentences:
+			en_unigram_possib = 0
+			fr_unigram_possib = 0
+			span_unigram_possib = 0
 			
-			log += 'UNIGRAM: ' + alpha + '\r'
-			fr_unigram_possib += math.log10(fr_unigram_model[alpha_index])
-			log += 'FRENCH: P(' + alpha + ') = ' + str(fr_unigram_model[alpha_index]) + ' ==> log prob of sentence so far: ' + str(fr_unigram_possib) + '\r'
-			en_unigram_possib += math.log10(en_unigram_model[alpha_index])
-			log += 'ENGLISH: P(' + alpha + ') = ' + str(en_unigram_model[alpha_index]) + ' ==> log prob of sentence so far: ' + str(en_unigram_possib) + '\r'
-			span_unigram_possib += math.log10(span_unigram_model[alpha_index])
-			log += 'OTHER: P(' + alpha + ') = ' + str(span_unigram_model[alpha_index]) + ' ==> log prob of sentence so far: ' + str(span_unigram_possib) + '\r\n'
+			log = s + '\r\r'
 
-		# get max
-		if en_unigram_model >= fr_unigram_possib and en_unigram_model >= span_unigram_possib:
-			log += 'According to the unigram model, the sentence is in English'
-		elif fr_unigram_possib >= en_unigram_possib and fr_unigram_possib >= span_unigram_possib:
-			log += 'According to the unigram model, the sentence is in French'
-		elif span_unigram_possib >= fr_unigram_possib and span_unigram_possib >= en_unigram_possib:
-			log += 'According to the unigram model, the sentence is in Spanish'
+			# preprocess sentence
+			tokens = process_text(s)
+
+			log += 'UNIGRAM MODEL:\r\r'
+			
+			for t in tokens:
+				t = t.strip()
+				for i in range(0, len(t)):
+					alpha = t[i]
+					alpha_index = alphabet.index(alpha)
+					
+					log += 'UNIGRAM: ' + alpha + '\r'
+					fr_unigram_possib += math.log10(fr_unigram_model[alpha_index])
+					log += 'FRENCH: P(' + alpha + ') = ' + str(fr_unigram_model[alpha_index]) + ' ==> log prob of sentence so far: ' + str(fr_unigram_possib) + '\r'
+					en_unigram_possib += math.log10(en_unigram_model[alpha_index])
+					log += 'ENGLISH: P(' + alpha + ') = ' + str(en_unigram_model[alpha_index]) + ' ==> log prob of sentence so far: ' + str(en_unigram_possib) + '\r'
+					span_unigram_possib += math.log10(span_unigram_model[alpha_index])
+					log += 'OTHER: P(' + alpha + ') = ' + str(span_unigram_model[alpha_index]) + ' ==> log prob of sentence so far: ' + str(span_unigram_possib) + '\r\r'
+
+			# get max
+			if en_unigram_possib >= fr_unigram_possib and en_unigram_possib >= span_unigram_possib:
+				log += 'According to the unigram model, the sentence is in English'
+			elif fr_unigram_possib >= en_unigram_possib and fr_unigram_possib >= span_unigram_possib:
+				log += 'According to the unigram model, the sentence is in French'
+			elif span_unigram_possib >= fr_unigram_possib and span_unigram_possib >= en_unigram_possib:
+				log += 'According to the unigram model, the sentence is in Spanish'
 
 
-		log += '\r----------------\r'
-		log += 'BIGRAM MODEL:\r\n'
+			log += '\r----------------\r'
+			log += 'BIGRAM MODEL:\r\r'
 
-		for i in range(0, len(token) - 1):
-			pre_char = token[i]
-			after_char = token[i + 1]
-			pre_index = alphabet.index(pre_char)
-			after_index = alphabet.index(after_char)
 			en_bigram_possib = 0
 			fr_bigram_possib = 0
 			span_bigram_possib = 0
+
+			for t in tokens:
+				t = t.strip()
+
+				for i in range(0, len(t) - 1):
+					pre_char = t[i]
+					after_char = t[i + 1]
+					pre_index = alphabet.index(pre_char)
+					after_index = alphabet.index(after_char)
+					
+					log += 'BIGRAM: ' + pre_char + after_char + '\r'				
+					fr_bigram_possib += math.log10(fr_bigram_model[pre_index][after_index])
+					log += 'FRENCH: P(' + after_char + '|' + pre_char + ') = ' + str(fr_bigram_model[pre_index][after_index]) + ' ==> log prob of sentence so far: ' + str(fr_bigram_possib) + '\r'
+					en_bigram_possib += math.log10(en_bigram_model[pre_index][after_index])
+					log += 'ENGLISH: P(' + after_char + '|' + pre_char + ') = ' + str(en_bigram_model[pre_index][after_index]) + ' ==> log prob of sentence so far: ' + str(en_bigram_possib) + '\r'
+					span_bigram_possib += math.log10(span_bigram_model[pre_index][after_index])
+					log += 'OTHER: P(' + after_char + '|' + pre_char + ') = ' + str(span_bigram_model[pre_index][after_index]) + ' ==> log prob of sentence so far: ' + str(span_bigram_possib) + '\r\r'
+
+			# get max
+			if en_bigram_possib >= fr_bigram_possib and en_bigram_possib >= span_bigram_possib:
+				log += 'According to the bigram model, the sentence is in English'
+			elif fr_bigram_possib >= en_bigram_possib and fr_bigram_possib >= span_bigram_possib:
+				log += 'According to the bigram model, the sentence is in French'
+			elif span_bigram_possib >= fr_bigram_possib and span_bigram_possib >= en_bigram_possib:
+				log += 'According to the bigram model, the sentence is in Spanish'
+
+			# write log
+			with open('out' + str(sentence_index) + '.txt', 'w') as f:
+				f.write(log)
+				sentence_index += 1
+
+
+
+# -------------- experiment --------------
+	if IF_EXPERIMENT:
+		test_data = spanish_text_1 + spanish_text_2
+		sentences = re.split('[!.?]', test_data)
+		true = 'span'
+
+		unigram_error_sentences = list()
+		bigram_error_sentences = list()
+		both_correct_sentences = list()
+		both_error_sentences = list()
+
+		for s in sentences:
+			unigram_pred = pred_by_unigram(en_unigram_model, fr_unigram_model, span_unigram_model, s)
+			bigram_pred = pred_by_bigram(en_bigram_model, fr_bigram_model, span_bigram_model, s)
+
+			if unigram_pred != true:
+				unigram_error_sentences.append(s)
 			
-			log += 'BIGRAM: ' + pre_char + after_char
-			fr_bigram_possib += math.log10(fr_bigram_model[pre_index][after_index])
-			log += 'FRENCH: P(' + after_char + '|' + pre_char') = ' + str(fr_bigram_model[pre_index][after_index]) + ' ==> log prob of sentence so far: ' + str(fr_bigram_possib) + '\r'
-			en_bigram_possib += math.log10(en_bigram_model[pre_index][after_index])
-			log += 'ENGLISH: P(' + after_char + '|' + pre_char') = ' + str(en_bigram_model[pre_index][after_index]) + ' ==> log prob of sentence so far: ' + str(en_bigram_possib) + '\r'
-			span_bigram_possib += math.log10(span_bigram_model[pre_index][after_index])
-			log += 'OTHER: P(' + after_char + '|' + pre_char') = ' + str(span_bigram_model[pre_index][after_index]) + ' ==> log prob of sentence so far: ' + str(span_bigram_possib) + '\r\n'
+			if bigram_pred != true:
+				bigram_error_sentences.append(s)
 
-		# get max
-		if en_bigram_model >= fr_bigram_possib and en_bigram_model >= span_bigram_possib:
-			log += 'According to the bigram model, the sentence is in English'
-		elif fr_bigram_possib >= en_bigram_possib and fr_bigram_possib >= span_bigram_possib:
-			log += 'According to the bigram model, the sentence is in French'
-		elif span_bigram_possib >= fr_bigram_possib and span_bigram_possib >= en_bigram_possib:
-			log += 'According to the bigram model, the sentence is in Spanish'
+			if unigram_pred != true and bigram_pred != true:
+				both_error_sentences.append(s)
 
+			if unigram_pred == true and bigram_pred == true:
+				both_correct_sentences.append(s)
 
-		# write log
-		with open('out' + str(i + 1) + '.txt', 'w') as f:
-			f.write(log)
+		print('-------- end --------')
+		print('unigram accuracy : ' + str(1 - (len(unigram_error_sentences) / len(sentences))))
+		print('bigram accuracy : ' + str(1 - (len(bigram_error_sentences) / len(sentences))))
+		# get top 5 sentences of both error sentences
+		print("----- error pred ----")
+		print(both_error_sentences)
+		print("------- correct pred ------")
+		print(both_correct_sentences[: 20])
 
 
 
