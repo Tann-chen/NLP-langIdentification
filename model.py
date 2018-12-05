@@ -296,9 +296,9 @@ if __name__ == '__main__':
 
 # -------------- experiment --------------
 	if IF_EXPERIMENT:
-		test_data = spanish_text_1 + spanish_text_2
+		test_data = french_text_1 + french_text_2
 		sentences = re.split('[!.?]', test_data)
-		true = 'span'
+		true = 'fr'
 
 		unigram_error_sentences = list()
 		bigram_error_sentences = list()
@@ -322,13 +322,14 @@ if __name__ == '__main__':
 				both_correct_sentences.append(s)
 
 		print('-------- end --------')
+		print('total : ' + str(len(sentences)))
 		print('unigram accuracy : ' + str(1 - (len(unigram_error_sentences) / len(sentences))))
 		print('bigram accuracy : ' + str(1 - (len(bigram_error_sentences) / len(sentences))))
 		# get top 5 sentences of both error sentences
-		print("----- error pred ----")
-		print(both_error_sentences)
-		print("------- correct pred ------")
-		print(both_correct_sentences[: 20])
+		# print("----- error pred ----")
+		# print(both_error_sentences)
+		# print("------- correct pred ------")
+		# print(both_correct_sentences[: 20])
 
 
 
